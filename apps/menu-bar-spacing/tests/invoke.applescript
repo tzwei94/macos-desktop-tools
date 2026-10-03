@@ -15,6 +15,8 @@ on run args
         set snapshot to controller's readPreference(item 5 of args)
         if not (isPresent of snapshot) then return "absent"
         return (storedType of snapshot) & ":" & (storedValue of snapshot)
+    else if operation is "initial-input" then
+        return controller's initialInputText(controller's readPreference(controller's spacingKey))
     end if
     error "Unknown operation"
 end run

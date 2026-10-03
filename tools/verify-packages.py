@@ -52,14 +52,13 @@ def verify_app(app, slug, identifier):
     assert info['CFBundleShortVersionString'] == VERSION
     assert info['LSMinimumSystemVersion'] == '13.0'
     assert info['CFBundleIconFile'] == 'AppIcon.icns'
-    allowed_usage = {'NSAppleEventsUsageDescription'} if slug == 'displaylink-toggle' else set()
-    assert {key for key in info if key.endswith('UsageDescription')} == allowed_usage
+    assert not {key for key in info if key.endswith('UsageDescription')}
     assert not any(path.name == 'Icon\r' for path in app.rglob('*'))
     run('/usr/bin/codesign', '--verify', '--deep', '--strict', str(app))
     verify_binary(app / 'Contents/MacOS' / info['CFBundleExecutable'])
     resources = app / 'Contents/Resources'
     verify_icons(resources, slug)
-    assert (resources / 'Scripts/main.scpt').is_file()
+    assert (resources / 'Scripts/main.scpt').is_file() == (slug != 'displaylink-toggle')
     if slug == 'display-mode-toggle':
         helper = resources / 'display-mode'
         verify_binary(helper)

@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import "../apps/displaylink-toggle/src/DisplayLinkController.h"
 
 @interface ToolDelegate : NSObject <NSApplicationDelegate>
 @end
@@ -15,6 +16,18 @@
     [menu addItem:appItem];
     NSApp.mainMenu = menu;
     dispatch_async(dispatch_get_main_queue(), ^{
+        if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"io.github.tzwei94.DisplayLinkToggle"]) {
+            ToggleDisplayLinkManager(@"com.displaylink.DisplayLinkUserAgent", ^(NSString *errorMessage) {
+                if (errorMessage) {
+                    NSAlert *alert = [[NSAlert alloc] init];
+                    alert.messageText = @"Could not toggle DisplayLink";
+                    alert.informativeText = errorMessage;
+                    [alert runModal];
+                }
+                [NSApp terminate:nil];
+            });
+            return;
+        }
         NSURL *url = [NSBundle.mainBundle URLForResource:@"main" withExtension:@"scpt" subdirectory:@"Scripts"];
         NSDictionary *error = nil;
         NSAppleScript *script = url ? [[NSAppleScript alloc] initWithContentsOfURL:url error:&error] : nil;

@@ -13,12 +13,23 @@ on displayValue(snapshot)
     return "Custom value (" & (storedType of snapshot) & ")"
 end displayValue
 
+on initialInputText(snapshot)
+    if isPresent of snapshot and storedType of snapshot is "integer" then
+        try
+            return (my validatedSpacing(storedValue of snapshot)) as text
+        end try
+    end if
+    return "3"
+end initialInputText
+
 on showSettings()
-    set inputText to "3"
+    set inputText to missing value
     activate
     repeat
         try
-            set currentSpacing to my displayValue(my readPreference(spacingKey))
+            set spacingSnapshot to my readPreference(spacingKey)
+            if inputText is missing value then set inputText to my initialInputText(spacingSnapshot)
+            set currentSpacing to my displayValue(spacingSnapshot)
             set currentPadding to my displayValue(my readPreference(paddingKey))
             set promptText to "Current spacing: " & currentSpacing & linefeed & "Current selection padding: " & currentPadding & linefeed & linefeed & "Choose a whole number from 0 to 32." & linefeed & "Smaller values bring menu bar icons closer together."
             set response to display dialog promptText with title "Menu Bar Spacing" default answer inputText buttons {"Restore Defaults", "Cancel", "Apply"} default button "Apply" cancel button "Cancel"

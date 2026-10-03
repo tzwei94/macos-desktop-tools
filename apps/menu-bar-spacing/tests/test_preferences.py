@@ -87,6 +87,19 @@ class PreferencesTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(self.call("validate", text).stdout.strip(), expected)
 
+    def test_initial_input_uses_current_spacing_without_changing_padding(self):
+        self.write(PADDING, "int", 12)
+        for value in (0, 1, 8, 32):
+            self.write(SPACING, "int", value)
+            self.assertEqual(self.call("initial-input").stdout.strip(), str(value))
+            self.assertEqual(self.value(PADDING), "12")
+
+    def test_initial_input_falls_back_for_missing_or_unsupported_override(self):
+        self.assertEqual(self.call("initial-input").stdout.strip(), "3")
+        for kind, value in (("int", -1), ("int", 99), ("string", "4"), ("float", "2.5")):
+            self.write(SPACING, kind, value)
+            self.assertEqual(self.call("initial-input").stdout.strip(), "3")
+
     def test_invalid_input_never_changes_settings(self):
         self.write(SPACING, "int", 8)
         self.write(PADDING, "int", 10)

@@ -46,7 +46,8 @@
 int main(void) {
     @autoreleasepool {
         [NSApplication sharedApplication];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+        BOOL accessory = [[NSBundle.mainBundle objectForInfoDictionaryKey:@"LSUIElement"] boolValue];
+        [NSApp setActivationPolicy:accessory ? NSApplicationActivationPolicyAccessory : NSApplicationActivationPolicyRegular];
         static ToolDelegate *delegate;
         delegate = [[ToolDelegate alloc] init];
         NSApp.delegate = delegate;

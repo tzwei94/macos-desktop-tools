@@ -20,7 +20,7 @@ The settings are the current-host global preferences `NSStatusItemSpacing` and `
 
 ### DisplayLink Toggle
 
-Install a compatible version of **[DisplayLink Manager from Synaptics](https://www.synaptics.com/products/displaylink-graphics/downloads/macos)** first. This utility does not include drivers. If Manager is running, the toggle sends its user-quit signal so Manager can stop its restart helper before exiting. It falls back to a normal quit if Manager remains running. If Manager is off, the toggle opens it. After quitting, it checks that Manager remains closed for two seconds and reports failed quits or immediate restarts. The toggle does not change login items or service settings.
+Install a compatible version of **[DisplayLink Manager from Synaptics](https://www.synaptics.com/products/displaylink-graphics/downloads/macos)** first. This utility does not include drivers. If Manager is running, the toggle sends its user-quit signal so Manager can stop its restart helper before exiting. It falls back to a normal quit if Manager remains running. If Manager is off, the toggle opens it. After quitting, it checks that Manager remains closed for two seconds and reports failed quits or immediate restarts. The toggle closes after completing the action and does not appear in the Dock. It does not change login items or service settings.
 
 The user-quit notification is an undocumented DisplayLink interface verified with Manager 17.0.24. In a live check it stayed off beyond the restart helper's interval, and a later toggle turned it back on. Future versions may change this interface. Native macOS APIs handle running-state checks, normal quitting, and launching; no Accessibility permission is needed.
 

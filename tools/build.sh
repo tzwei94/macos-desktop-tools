@@ -39,6 +39,8 @@ info = dict(CFBundleName=name, CFBundleDisplayName=name, CFBundleIdentifier=iden
             CFBundleShortVersionString=version, CFBundleVersion=version, CFBundleIconFile='AppIcon.icns',
             LSMinimumSystemVersion='13.0', LSMultipleInstancesProhibited=True,
             NSHumanReadableCopyright='macOS Desktop Tools contributors')
+if slug == 'displaylink-toggle':
+    info['LSUIElement'] = True
 with open(path, 'wb') as output:
     plistlib.dump(info, output)
 PY

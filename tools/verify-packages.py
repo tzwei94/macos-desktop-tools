@@ -52,6 +52,7 @@ def verify_app(app, slug, identifier):
     assert info['CFBundleShortVersionString'] == VERSION
     assert info['LSMinimumSystemVersion'] == '13.0'
     assert info['CFBundleIconFile'] == 'AppIcon.icns'
+    assert info.get('LSUIElement', False) == (slug == 'displaylink-toggle')
     assert not {key for key in info if key.endswith('UsageDescription')}
     assert not any(path.name == 'Icon\r' for path in app.rglob('*'))
     run('/usr/bin/codesign', '--verify', '--deep', '--strict', str(app))

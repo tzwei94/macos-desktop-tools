@@ -14,6 +14,7 @@ APPS = (
     ('menu-bar-spacing', 'Menu Bar Spacing', 'MenuBarSpacing'),
     ('displaylink-toggle', 'DisplayLink Toggle', 'DisplayLinkToggle'),
     ('display-mode-toggle', 'Toggle Display Mode', 'DisplayModeToggle'),
+    ('sourcetree-vscode-installer', 'Open in VS Code Installer', 'SourceTreeVSCodeInstaller'),
 )
 
 
@@ -21,11 +22,11 @@ def run(*args):
     return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
 
 
-def verify_binary(path):
+def verify_binary(path, minimum='13.0'):
     assert set(run('/usr/bin/lipo', '-archs', str(path)).split()) == {'arm64', 'x86_64'}, path
     for architecture in ('arm64', 'x86_64'):
         load_commands = run('/usr/bin/otool', '-arch', architecture, '-l', str(path))
-        assert 'minos 13.0' in load_commands or 'version 13.0' in load_commands, path
+        assert f'minos {minimum}' in load_commands or f'version {minimum}' in load_commands, path
 
 
 def verify_icons(resources, slug):
@@ -50,16 +51,24 @@ def verify_app(app, slug, identifier):
     assert info['CFBundleIdentifier'] == 'io.github.tzwei94.' + identifier
     assert info['CFBundleName'] == app.stem
     assert info['CFBundleShortVersionString'] == VERSION
-    assert info['LSMinimumSystemVersion'] == '13.0'
+    minimum = '14.0' if slug == 'sourcetree-vscode-installer' else '13.0'
+    assert info['LSMinimumSystemVersion'] == minimum
     assert info['CFBundleIconFile'] == 'AppIcon.icns'
     assert info.get('LSUIElement', False) == (slug == 'displaylink-toggle')
     assert not {key for key in info if key.endswith('UsageDescription')}
     assert not any(path.name == 'Icon\r' for path in app.rglob('*'))
     run('/usr/bin/codesign', '--verify', '--deep', '--strict', str(app))
-    verify_binary(app / 'Contents/MacOS' / info['CFBundleExecutable'])
+    verify_binary(app / 'Contents/MacOS' / info['CFBundleExecutable'], minimum)
     resources = app / 'Contents/Resources'
     verify_icons(resources, slug)
-    assert (resources / 'Scripts/main.scpt').is_file() == (slug != 'displaylink-toggle')
+    assert (resources / 'Scripts/main.scpt').is_file() == (slug in ('menu-bar-spacing', 'display-mode-toggle'))
+    if slug == 'sourcetree-vscode-installer':
+        helper = resources / 'RepositoryOpener'
+        assert helper.is_file() and helper.stat().st_mode & 0o111
+        verify_binary(helper, minimum)
+        run('/usr/bin/codesign', '--verify', '--strict', str(helper))
+        invalid = subprocess.run([str(helper)], capture_output=True, text=True)
+        assert invalid.returncode != 0 and 'expects one repository path' in invalid.stderr
     if slug == 'display-mode-toggle':
         helper = resources / 'display-mode'
         verify_binary(helper)

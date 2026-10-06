@@ -12,4 +12,12 @@ for source in "$root/apps/display-mode-toggle/src/DisplayModeToggle.applescript"
     /usr/bin/osacompile -o "$temporary/$(basename "$source").scpt" "$source"
 done
 bash "$root/tools/test-displaylink.sh"
-echo 'Preference, display planning, script compilation, and app lifecycle checks passed.'
+/usr/bin/xcrun swiftc -warnings-as-errors \
+    "$root/apps/sourcetree-vscode-installer/src/RepositoryLaunch.swift" \
+    "$root/apps/sourcetree-vscode-installer/src/RepositoryOpener.swift" -o "$temporary/RepositoryOpener"
+/usr/bin/xcrun swiftc -warnings-as-errors \
+    "$root/apps/sourcetree-vscode-installer/src/ActionInstaller.swift" \
+    "$root/apps/sourcetree-vscode-installer/src/RepositoryLaunch.swift" \
+    "$root/apps/sourcetree-vscode-installer/tests/InstallerTests.swift" -o "$temporary/installer-tests"
+"$temporary/installer-tests"
+echo 'Preference, display planning, script compilation, app lifecycle, and SourceTree installer checks passed.'

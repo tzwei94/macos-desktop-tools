@@ -18,10 +18,28 @@ for architecture in arm64 x86_64; do
         "$root/apps/display-mode-toggle/src/DisplayMode.swift" -o "$stage/display-mode-$architecture"
 done
 /usr/bin/lipo -create "$stage/display-mode-arm64" "$stage/display-mode-x86_64" -output "$stage/display-mode"
+for architecture in arm64 x86_64; do
+    /usr/bin/xcrun swiftc -O -warnings-as-errors -target "$architecture-apple-macos14.0" \
+        "$root/apps/sourcetree-vscode-installer/src/ActionInstaller.swift" \
+        "$root/apps/sourcetree-vscode-installer/src/Installer.swift" -o "$stage/installer-$architecture"
+    /usr/bin/xcrun swiftc -O -warnings-as-errors -target "$architecture-apple-macos14.0" \
+        "$root/apps/sourcetree-vscode-installer/src/RepositoryLaunch.swift" \
+        "$root/apps/sourcetree-vscode-installer/src/RepositoryOpener.swift" -o "$stage/repository-opener-$architecture"
+done
+/usr/bin/lipo -create "$stage/installer-arm64" "$stage/installer-x86_64" -output "$stage/installer"
+/usr/bin/lipo -create "$stage/repository-opener-arm64" "$stage/repository-opener-x86_64" -output "$stage/repository-opener"
 while IFS='|' read -r slug name script identifier; do
     app="$stage/$name.app"
     mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/Scripts"
-    cp "$stage/launcher" "$app/Contents/MacOS/applet"
+    minimum_system_version=13.0
+    if [[ "$slug" == sourcetree-vscode-installer ]]; then
+        minimum_system_version=14.0
+        cp "$stage/installer" "$app/Contents/MacOS/applet"
+        cp "$stage/repository-opener" "$app/Contents/Resources/RepositoryOpener"
+        /usr/bin/codesign --force --sign - --timestamp=none --identifier "$identifier.helper" "$app/Contents/Resources/RepositoryOpener"
+    else
+        cp "$stage/launcher" "$app/Contents/MacOS/applet"
+    fi
     if [[ "$script" != - ]]; then
         /usr/bin/osacompile -o "$app/Contents/Resources/Scripts/main.scpt" "$root/apps/$slug/src/$script"
     fi
@@ -31,13 +49,13 @@ while IFS='|' read -r slug name script identifier; do
         cp "$stage/display-mode" "$app/Contents/Resources/display-mode"
         /usr/bin/codesign --force --sign - --timestamp=none --identifier "$identifier.helper" "$app/Contents/Resources/display-mode"
     fi
-    python3 - "$app/Contents/Info.plist" "$name" "$identifier" "$version" "$slug" <<'PY'
+    python3 - "$app/Contents/Info.plist" "$name" "$identifier" "$version" "$slug" "$minimum_system_version" <<'PY'
 import plistlib, sys
-path, name, identifier, version, slug = sys.argv[1:]
+path, name, identifier, version, slug, minimum_system_version = sys.argv[1:]
 info = dict(CFBundleName=name, CFBundleDisplayName=name, CFBundleIdentifier=identifier,
             CFBundleExecutable='applet', CFBundlePackageType='APPL', CFBundleInfoDictionaryVersion='6.0',
             CFBundleShortVersionString=version, CFBundleVersion=version, CFBundleIconFile='AppIcon.icns',
-            LSMinimumSystemVersion='13.0', LSMultipleInstancesProhibited=True,
+            LSMinimumSystemVersion=minimum_system_version, LSMultipleInstancesProhibited=True,
             NSHumanReadableCopyright='macOS Desktop Tools contributors')
 if slug == 'displaylink-toggle':
     info['LSUIElement'] = True
@@ -54,9 +72,10 @@ done <<'APPS'
 menu-bar-spacing|Menu Bar Spacing|MenuBarSpacing.applescript|io.github.tzwei94.MenuBarSpacing
 displaylink-toggle|DisplayLink Toggle|-|io.github.tzwei94.DisplayLinkToggle
 display-mode-toggle|Toggle Display Mode|DisplayModeToggle.applescript|io.github.tzwei94.DisplayModeToggle
+sourcetree-vscode-installer|Open in VS Code Installer|-|io.github.tzwei94.SourceTreeVSCodeInstaller
 APPS
 (
     cd "$root/dist"
-    /usr/bin/shasum -a 256 "menu-bar-spacing-$version.zip" "displaylink-toggle-$version.zip" "display-mode-toggle-$version.zip" > "SHA256SUMS"
+    /usr/bin/shasum -a 256 "menu-bar-spacing-$version.zip" "displaylink-toggle-$version.zip" "display-mode-toggle-$version.zip" "sourcetree-vscode-installer-$version.zip" > "SHA256SUMS"
 )
-echo "Built all three apps and ZIP downloads ($version)."
+echo "Built all four apps and ZIP downloads ($version)."
